@@ -707,6 +707,86 @@
             border-left: 3px solid transparent;
         }
 
+        /* Date Navigation Styles */
+        .date-navigator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .nav-date-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--secondary-bg);
+            border: 2px solid var(--border);
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .nav-date-btn:hover {
+            background: var(--border);
+        }
+
+        .nav-date-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .current-date-display {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .retroactive-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--warning);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--warning);
+            margin-left: 8px;
+        }
+
+        .retroactive-badge svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .date-navigator {
+                gap: 8px;
+            }
+
+            .nav-date-btn {
+                padding: 12px 12px;
+                font-size: 0.85rem;
+                min-width: 90px;
+            }
+
+            .nav-date-btn span {
+                display: none;
+            }
+
+            .current-date-display {
+                font-size: 0.95rem;
+            }
+
+            .retroactive-badge {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+        }
+
         .checkbox-container {
             position: relative;
             margin-right: 16px;
@@ -910,6 +990,7 @@
             border-radius: 4px;
             font-size: 0.75rem;
             border: 1px solid var(--border);
+            position: relative;
         }
 
         .day-completion input[type="checkbox"] {
@@ -921,6 +1002,19 @@
         .day-completion.completed {
             background: rgba(16, 185, 129, 0.2);
             border-color: var(--success);
+        }
+
+        .day-completion.completed.retroactive {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--warning);
+        }
+
+        .day-completion.completed.retroactive::after {
+            content: '🕐';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            font-size: 10px;
         }
 
         .task-item-header {
@@ -1283,6 +1377,27 @@
             <p class="page-subtitle" id="todayDate">Complete today's scheduled tasks</p>
         </div>
 
+        <!-- Date Navigation -->
+        <div class="card" style="padding: 16px;">
+            <div class="date-navigator">
+                <button class="nav-date-btn" id="prevDayBtn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Previous</span>
+                </button>
+                <div class="current-date-display">
+                    <span id="navDateDisplay">Today</span>
+                </div>
+                <button class="nav-date-btn" id="nextDayBtn">
+                    <span>Next</span>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <div class="card">
             <h2 class="card-title">
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1316,7 +1431,8 @@
                 potentialAllowance: 0
             },
             tasks: [],
-            lastCompletionPercentage: 0
+            lastCompletionPercentage: 0,
+            viewingDate: null // null means "today"
         };
 
         // DOM elements
@@ -1356,6 +1472,55 @@
         const todayEmptyState = document.getElementById('todayEmptyState');
         const todayDate = document.getElementById('todayDate');
         const todayDayName = document.getElementById('todayDayName');
+        const prevDayBtn = document.getElementById('prevDayBtn');
+        const nextDayBtn = document.getElementById('nextDayBtn');
+        const navDateDisplay = document.getElementById('navDateDisplay');
+
+        // Date navigation handlers
+        if (prevDayBtn) {
+            prevDayBtn.addEventListener('click', () => {
+                navigateDay(-1);
+            });
+        }
+
+        if (nextDayBtn) {
+            nextDayBtn.addEventListener('click', () => {
+                navigateDay(1);
+            });
+        }
+
+        // Navigate to different days
+        function navigateDay(offset) {
+            const currentDate = state.viewingDate ? new Date(state.viewingDate) : new Date();
+            currentDate.setDate(currentDate.getDate() + offset);
+            state.viewingDate = currentDate.toISOString().split('T')[0]; // Store as YYYY-MM-DD
+            renderTodayTasks();
+            updateDateNavigation();
+        }
+
+        // Update date navigation display
+        function updateDateNavigation() {
+            const viewDate = state.viewingDate ? new Date(state.viewingDate + 'T00:00:00') : new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            viewDate.setHours(0, 0, 0, 0);
+
+            const isToday = viewDate.getTime() === today.getTime();
+            const isFuture = viewDate.getTime() > today.getTime();
+
+            // Update display text
+            if (isToday) {
+                navDateDisplay.textContent = 'Today';
+            } else {
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                navDateDisplay.textContent = viewDate.toLocaleDateString('en-US', options);
+            }
+
+            // Disable next button if viewing today or future
+            if (nextDayBtn) {
+                nextDayBtn.disabled = isToday || isFuture;
+            }
+        }
 
         // Page Navigation
         navLinks.forEach(link => {
@@ -1407,6 +1572,8 @@
                 document.getElementById('tasksPage').classList.add('active');
             } else if (pageName === 'today') {
                 document.getElementById('todayPage').classList.add('active');
+                // Reset to today when navigating to this page
+                state.viewingDate = null;
                 renderTodayTasks();
             }
         }
@@ -1426,9 +1593,21 @@
 
         // Render today's tasks
         function renderTodayTasks() {
-            const currentDay = getCurrentDay();
+            const viewDate = state.viewingDate ? new Date(state.viewingDate + 'T00:00:00') : new Date();
+            const currentDay = getDayFromDate(viewDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            viewDate.setHours(0, 0, 0, 0);
+            
+            const isViewingToday = viewDate.getTime() === today.getTime();
+            const viewDateString = state.viewingDate || getTodayDateString();
+            
             todayDayName.textContent = currentDay;
-            todayDate.textContent = getFormattedDate();
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            todayDate.textContent = viewDate.toLocaleDateString('en-US', options);
+            
+            updateDateNavigation();
             
             const todaysTasks = state.tasks.filter(task => 
                 task.selectedDays && task.selectedDays.includes(currentDay)
@@ -1443,7 +1622,27 @@
             todayEmptyState.style.display = 'none';
             todayTaskList.innerHTML = todaysTasks.map(task => {
                 const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium';
+                
+                // Check if this day is completed
                 const isCompleted = task.completedDays && task.completedDays.includes(currentDay);
+                
+                // Check completion metadata for retroactive indicator
+                let retroactiveBadge = '';
+                if (isCompleted && task.completionMeta && task.completionMeta[currentDay]) {
+                    const completedOnDate = task.completionMeta[currentDay];
+                    if (completedOnDate !== viewDateString) {
+                        const completedDate = new Date(completedOnDate + 'T00:00:00');
+                        const options = { month: 'short', day: 'numeric' };
+                        retroactiveBadge = `
+                            <span class="retroactive-badge" title="Completed on ${completedDate.toLocaleDateString('en-US', options)}">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                ${completedDate.toLocaleDateString('en-US', options)}
+                            </span>
+                        `;
+                    }
+                }
                 
                 return `
                     <li class="task-item ${isCompleted ? 'completed' : ''}" data-id="${task.id}">
@@ -1451,14 +1650,43 @@
                             <div class="checkbox-container">
                                 <input type="checkbox" 
                                        ${isCompleted ? 'checked' : ''} 
-                                       onchange="toggleDayCompletion(${task.id}, '${currentDay}')">
+                                       onchange="toggleDayCompletionWithDate(${task.id}, '${currentDay}', '${viewDateString}')">
                             </div>
                             <span class="priority-badge priority-${task.priority || 'medium'}">${priorityLabel}</span>
                             <span class="task-text">${task.text}</span>
+                            ${retroactiveBadge}
                         </div>
                     </li>
                 `;
             }).join('');
+        }
+
+        // Get day name from date object
+        function getDayFromDate(date) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            return days[date.getDay()];
+        }
+
+        // Get today's date string
+        function getTodayDateString() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        // Get the date string for a specific day of the current week
+        function getDateForDay(dayAbbr) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date();
+            const currentDayIndex = today.getDay();
+            const targetDayIndex = days.indexOf(dayAbbr);
+            
+            if (targetDayIndex === -1) return getTodayDateString();
+            
+            const diff = targetDayIndex - currentDayIndex;
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + diff);
+            
+            return targetDate.toISOString().split('T')[0];
         }
 
         // Everyday toggle functionality
@@ -1644,8 +1872,23 @@
                 
                 const dayCheckboxes = task.selectedDays.map(day => {
                     const isCompleted = task.completedDays.includes(day);
+                    
+                    // Check if completed retroactively
+                    let title = day;
+                    let className = `day-completion ${isCompleted ? 'completed' : ''}`;
+                    if (isCompleted && task.completionMeta && task.completionMeta[day]) {
+                        const completedDate = new Date(task.completionMeta[day] + 'T00:00:00');
+                        const expectedDate = getDateForDay(day);
+                        
+                        if (task.completionMeta[day] !== expectedDate) {
+                            const options = { month: 'short', day: 'numeric' };
+                            title = `${day} - Completed on ${completedDate.toLocaleDateString('en-US', options)}`;
+                            className += ' retroactive';
+                        }
+                    }
+                    
                     return `
-                        <div class="day-completion ${isCompleted ? 'completed' : ''}" title="${day}">
+                        <div class="${className}" title="${title}">
                             <input type="checkbox" 
                                    ${isCompleted ? 'checked' : ''} 
                                    onchange="toggleDayCompletion(${task.id}, '${day}')"
@@ -1672,26 +1915,39 @@
             }).join('');
         }
 
-        // Toggle day completion
-        window.toggleDayCompletion = function(taskId, day) {
+        // Toggle day completion with date tracking
+        window.toggleDayCompletionWithDate = function(taskId, day, completionDate) {
             const task = state.tasks.find(t => t.id === taskId);
             if (task) {
                 if (!task.completedDays) {
                     task.completedDays = [];
                 }
+                if (!task.completionMeta) {
+                    task.completionMeta = {};
+                }
                 
                 const dayIndex = task.completedDays.indexOf(day);
                 if (dayIndex > -1) {
+                    // Uncomplete the day
                     task.completedDays.splice(dayIndex, 1);
+                    delete task.completionMeta[day];
                 } else {
+                    // Complete the day and track when it was completed
                     task.completedDays.push(day);
+                    task.completionMeta[day] = completionDate;
                 }
                 
                 saveState();
                 renderTasks();
-                renderTodayTasks(); // Also update today's view
+                renderTodayTasks();
                 updateUnlockDisplay();
             }
+        };
+
+        // Toggle day completion (for weekly tasks view)
+        window.toggleDayCompletion = function(taskId, day) {
+            const todayString = getTodayDateString();
+            toggleDayCompletionWithDate(taskId, day, todayString);
         };
 
         // Delete task
@@ -1835,6 +2091,7 @@
         // Initialize
         loadState();
         renderTodayTasks();
+        updateDateNavigation();
         
         // Update sidebar display on load
         updateUnlockDisplay();
