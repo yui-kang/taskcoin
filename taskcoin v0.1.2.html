@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskCoin - Gamified Budget Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #0f1419;
+      --secondary-bg: #1a1f2e;
+      --card-bg: #22293a;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --border: #374151;
+      --shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Navigation Sidebar */
+    .sidebar {
+      width: 250px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo h1 { font-size: 1.8rem; margin-bottom: 5px; }
+
+    .nav-menu { list-style: none; }
+    .nav-item { margin-bottom: 8px; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    .nav-link:hover { background: var(--secondary-bg); color: var(--text-primary); }
+    .nav-link.active { background: var(--accent); color: white; }
+    .nav-link svg { width: 20px; height: 20px; }
+
+    /* Persistent Unlock Display in Sidebar */
+    .sidebar-unlock {
+      margin-top: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .sidebar-unlock-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-unlock-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--success);
+      margin: 8px 0;
+    }
+
+    .sidebar-unlock-potential {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      margin-left: 250px;
+      flex: 1;
+      padding: 20px;
+    }
+
+    /* Page System */
+    .page { display: none; animation: fadeInUp 0.4s ease-out; }
+    .page.active { display: block; }
+
+    /* Mobile Navigation Toggle */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1000;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-menu-btn svg {
+      width: 24px;
+      height: 24px;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .mobile-menu-btn:active { transform: scale(0.95); }
+
+    /* Backdrop for mobile sidebar */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+    }
+
+    .sidebar-backdrop.active { display: block; }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 999;
+        width: 280px;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .main-content { margin-left: 0; padding: 70px 16px 20px; }
+      .mobile-menu-btn { display: block; }
+      h1 { font-size: 1.5rem; }
+      .page-title { font-size: 1.5rem; }
+      .card { padding: 16px; margin-bottom: 16px; }
+      .card-title { font-size: 1.2rem; }
+      .allowance-amount { font-size: 2rem; }
+      .sidebar-unlock-amount { font-size: 1.5rem; }
+      .input-grid { grid-template-columns: 1fr; gap: 12px; }
+
+      .task-input-container { flex-direction: column; gap: 10px; }
+      .task-input-container input,
+      .task-input-container select,
+      .task-input-container button { width: 100%; }
+
+      .days-grid { grid-template-columns: repeat(7, 1fr); gap: 6px; }
+      .day-checkbox { flex-direction: column; padding: 8px 4px; font-size: 0.75rem; text-align: center; }
+      .day-checkbox span { font-size: 0.7rem; }
+      .day-checkbox input[type="checkbox"] { width: 20px; height: 20px; margin-bottom: 2px; }
+
+      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .stat-card { padding: 12px 8px; }
+      .stat-value { font-size: 1.2rem; }
+      .stat-label { font-size: 0.7rem; }
+
+      .task-item { padding: 12px; }
+      .task-item-header { flex-wrap: wrap; }
+      .task-item-body { padding-left: 0; margin-top: 8px; }
+      .task-days { margin-left: 0; width: 100%; }
+      .day-completion { padding: 6px 8px; font-size: 0.7rem; }
+      .day-completion input[type="checkbox"] { width: 18px; height: 18px; }
+      .priority-badge { font-size: 0.65rem; padding: 3px 6px; }
+      .delete-btn { padding: 6px; font-size: 1rem; }
+
+      button { padding: 14px 20px; font-size: 1rem; }
+      input[type="number"], input[type="text"], select { padding: 14px; font-size: 1rem; }
+
+      .toggle { width: 44px; height: 24px; }
+      .toggle::after { width: 18px; height: 18px; }
+      .toggle.active::after { transform: translateX(20px); }
+
+      .days-selector { padding: 12px; }
+      .days-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .progress-text { font-size: 0.8rem; }
+      .unlock-display { padding: 20px 16px; }
+
+      /* Make sidebar overlay entire screen on mobile */
+      .sidebar.open { width: 100%; }
+
+      /* Better touch targets */
+      .nav-link { padding: 16px; font-size: 1.05rem; }
+      .nav-link svg { width: 22px; height: 22px; }
+    }
+
+    @media (max-width: 480px) {
+      .page-title { font-size: 1.3rem; }
+      .card-title { font-size: 1rem; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .days-grid { grid-template-columns: repeat(4, 1fr); }
+      .day-checkbox { padding: 10px 6px; }
+      .allowance-amount { font-size: 1.8rem; }
+      .task-text { font-size: 0.95rem; }
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .page-header { margin-bottom: 30px; }
+    .page-title { font-size: 2rem; font-weight: 700; margin-bottom: 10px; }
+    .page-subtitle { color: var(--text-secondary); }
+
+    @media (max-width: 768px) {
+      .page-header { margin-bottom: 20px; }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle { color: var(--text-secondary); font-size: 1rem; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px var(--shadow);
+      border: 1px solid var(--border);
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon { width: 24px; height: 24px; }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      .form-group { margin-bottom: 20px; }
+      label { font-size: 0.95rem; margin-bottom: 10px; }
+    }
+
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--secondary-bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    select { cursor: pointer; }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .toggle {
+      position: relative;
+      width: 50px;
+      height: 26px;
+      background: var(--border);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle.active { background: var(--accent); }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.3s;
+    }
+
+    .toggle.active::after { transform: translateX(24px); }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    button:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--secondary-bg);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover { background: var(--border); border-color: var(--accent); }
+
+    .unlock-display {
+      text-align: center;
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    .allowance-amount {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--success);
+      margin: 10px 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .potential-amount {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-top: 10px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 12px;
+      background: var(--secondary-bg);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--success) 100%);
+      transition: width 0.5s ease;
+      border-radius: 6px;
+    }
+
+    .progress-text {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    .task-input-container { display: flex; gap: 12px; margin-bottom: 20px; }
+    .task-input-container input { flex: 1; }
+
+    .task-list { list-style: none; }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      background: var(--secondary-bg);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .task-item:hover { background: var(--border); }
+    .task-item.completed { opacity: 0.7; }
+    .task-item.completed .task-text { text-decoration: line-through; color: var(--text-secondary); }
+
+    #todayPage .task-item.completed {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--success);
+    }
+
+    #todayPage .task-item { border-left: 3px solid transparent; }
+
+    .checkbox-container { position: relative; margin-right: 16px; }
+
+    input[type="checkbox"] {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    input[type="checkbox"]:checked { background: var(--success); border-color: var(--success); }
+
+    input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .task-text { flex: 1; color: var(--text-primary); font-size: 1rem; }
+
+    .delete-btn {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: 8px;
+      font-size: 1.2rem;
+      border-radius: 4px;
+      box-shadow: none;
+    }
+
+    .delete-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      transform: none;
+    }
+
+    .priority-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 8px;
+      text-transform: uppercase;
+    }
+
+    .priority-easy { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .priority-medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .priority-hard { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .btn-reset {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 2px solid rgba(239, 68, 68, 0.3);
+      width: 100%;
+      margin-top: 20px;
+      opacity: 0.5;
+    }
+
+    .btn-reset:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      opacity: 0.7;
+    }
+
+    .task-input-container select { width: auto; min-width: 120px; }
+
+    .days-selector {
+      background: var(--secondary-bg);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 2px solid var(--border);
+    }
+
+    .days-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .days-header label {
+      margin: 0;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .everyday-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .everyday-toggle input[type="checkbox"] { margin: 0; }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 8px;
+    }
+
+    .day-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: var(--card-bg);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .day-checkbox:hover { background: var(--border); }
+
+    .day-checkbox input[type="checkbox"] {
+      margin: 0;
+      width: 18px;
+      height: 18px;
+    }
+
+    .day-checkbox.selected {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid var(--accent);
+    }
+
+    .task-days { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; flex: 1; }
+
+    .day-completion {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: var(--secondary-bg);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .day-completion input[type="checkbox"] {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+    }
+
+    .day-completion.completed {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--success);
+    }
+
+    .task-item-header { display: flex; align-items: center; width: 100%; margin-bottom: 8px; }
+    .task-item-body { display: flex; align-items: center; width: 100%; padding-left: 32px; }
+
+    .task-item { flex-direction: column; align-items: flex-start; }
+
+    .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .stat-card { background: var(--secondary-bg); padding: 16px; border-radius: 8px; text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+    .calculate-btn { width: 100%; margin-top: 10px; }
+
+    .highlight { animation: highlight 0.6s ease-out; }
+
+    @keyframes highlight {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); color: var(--warning); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar Backdrop (for mobile) -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Mobile Menu Button -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  </button>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <h1>💰 TaskCoin</h1>
+        <p class="subtitle" style="font-size: 0.85rem;">Gamified Budget Tracker</p>
+      </div>
+
+      <!-- Persistent Unlock Display -->
+      <div class="sidebar-unlock">
+        <div class="sidebar-unlock-label">Currently Unlocked</div>
+        <div class="sidebar-unlock-amount" id="sidebarUnlocked">$0.00</div>
+        <div class="sidebar-unlock-potential">of <span id="sidebarPotential">$0.00</span></div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <button class="nav-link active" data-page="budget">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Budget Calculator
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" data-page="tasks">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Weekly Tasks
+          </button>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" data-page="today">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Today's Tasks
+          </button>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Budget Calculator Page -->
+      <div class="page active" id="budgetPage">
+        <div class="page-header">
+          <h2 class="page-title">Budget Calculator</h2>
+          <p class="page-subtitle">Set up your weekly allowance budget</p>
+        </div>
+
+        <!-- Budget Calculator Card -->
+        <div class="card">
+          <h2 class="card-title">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Budget Settings
+          </h2>
+
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="balance">Current Balance ($)</label>
+              <input type="number" id="balance" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label for="inflow">Estimated Cash Inflow ($)</label>
+              <input type="number" id="inflow" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label for="outflow">Estimated Cash Outflow ($)</label>
+              <input type="number" id="outflow" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label for="savings">Target Savings ($)</label>
+              <input type="number" id="savings" placeholder="0.00" step="0.01" />
+            </div>
+          </div>
+
+          <div class="toggle-container">
+            <div class="toggle" id="manualToggle"></div>
+            <label style="margin: 0; cursor: pointer;" for="manualToggle">Use Manual Survival Allowance</label>
+          </div>
+
+          <div class="form-group" id="manualAllowanceGroup" style="display: none;">
+            <label for="manualAllowance">Manual Allowance ($)</label>
+            <input type="number" id="manualAllowance" placeholder="0.00" step="0.01" />
+          </div>
+
+          <button class="calculate-btn" id="calculateBtn">Calculate Allowance</button>
+        </div>
+
+        <!-- Progress Overview Card -->
+        <div class="card">
+          <h2 class="card-title">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Progress Overview
+          </h2>
+
+          <div class="unlock-display">
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">WEEKLY PROGRESS</p>
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <p class="progress-text" id="progressText">0 of 0 days completed (0%)</p>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="totalTasks">0</div>
+              <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="completedTasks">0</div>
+              <div class="stat-label">Days Completed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="completionRate">0%</div>
+              <div class="stat-label">Completion Rate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Tasks Page -->
+      <div class="page" id="tasksPage">
+        <div class="page-header">
+          <h2 class="page-title">Weekly Tasks</h2>
+          <p class="page-subtitle">Schedule your tasks for the week</p>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Weekly Tasks
+          </h2>
+
+          <div class="days-selector">
+            <div class="days-header">
+              <label>Schedule Days</label>
+              <label class="everyday-toggle">
+                <input type="checkbox" id="everydayToggle" />
+                <span>Everyday</span>
+              </label>
+            </div>
+
+            <div class="days-grid">
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Sun" /><span>Sun</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Mon" /><span>Mon</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Tue" /><span>Tue</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Wed" /><span>Wed</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Thu" /><span>Thu</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Fri" /><span>Fri</span></label>
+              <label class="day-checkbox"><input type="checkbox" class="day-check" value="Sat" /><span>Sat</span></label>
+            </div>
+          </div>
+
+          <div class="task-input-container">
+            <input type="text" id="taskInput" placeholder="Add a new task..." />
+            <select id="taskPriority">
+              <option value="easy">Easy (1x)</option>
+              <option value="medium" selected>Medium (2x)</option>
+              <option value="hard">Hard (3x)</option>
+            </select>
+            <button id="addTaskBtn">Add Task</button>
+          </div>
+
+          <ul class="task-list" id="taskList"></ul>
+
+          <div class="empty-state" id="emptyState" style="display: none;">
+            <p>📝 No tasks yet. Add your first task to get started!</p>
+          </div>
+
+          <button class="btn-reset" id="resetWeekBtn">🔄 Reset for New Week</button>
+        </div>
+      </div>
+
+      <!-- Today's Tasks Page -->
+      <div class="page" id="todayPage">
+        <div class="page-header">
+          <h2 class="page-title">Today's Tasks</h2>
+          <p class="page-subtitle" id="todayDate">Complete today's scheduled tasks</p>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Tasks for <span id="todayDayName">Today</span>
+          </h2>
+
+          <ul class="task-list" id="todayTaskList"></ul>
+
+          <div class="empty-state" id="todayEmptyState" style="display: none;">
+            <p>🎉 No tasks scheduled for today! Enjoy your free time.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // State management
+    let state = {
+      budget: {
+        balance: 0,
+        inflow: 0,
+        outflow: 0,
+        savings: 0,
+        manualMode: false,
+        manualAllowance: 0,
+        potentialAllowance: 0
+      },
+      tasks: [],
+      lastCompletionPercentage: 0
+    };
+
+    // DOM elements
+    const balanceInput = document.getElementById('balance');
+    const inflowInput = document.getElementById('inflow');
+    const outflowInput = document.getElementById('outflow');
+    const savingsInput = document.getElementById('savings');
+    const manualToggle = document.getElementById('manualToggle');
+    const manualAllowanceGroup = document.getElementById('manualAllowanceGroup');
+    const manualAllowanceInput = document.getElementById('manualAllowance');
+    const calculateBtn = document.getElementById('calculateBtn');
+
+    const taskInput = document.getElementById('taskInput');
+    const taskPriority = document.getElementById('taskPriority');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const resetWeekBtn = document.getElementById('resetWeekBtn');
+    const taskList = document.getElementById('taskList');
+    const emptyState = document.getElementById('emptyState');
+
+    const everydayToggle = document.getElementById('everydayToggle');
+    const dayChecks = document.querySelectorAll('.day-check');
+
+    const sidebarUnlocked = document.getElementById('sidebarUnlocked');
+    const sidebarPotential = document.getElementById('sidebarPotential');
+
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const totalTasksEl = document.getElementById('totalTasks');
+    const completedTasksEl = document.getElementById('completedTasks');
+    const completionRateEl = document.getElementById('completionRate');
+
+    // Navigation elements
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+    const todayTaskList = document.getElementById('todayTaskList');
+    const todayEmptyState = document.getElementById('todayEmptyState');
+    const todayDate = document.getElementById('todayDate');
+    const todayDayName = document.getElementById('todayDayName');
+
+    // Page Navigation
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        const targetPage = link.getAttribute('data-page');
+        switchPage(targetPage);
+
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        closeMobileMenu();
+      });
+    });
+
+    // Mobile menu toggle
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', () => toggleMobileMenu());
+    }
+
+    // Close mobile menu when clicking backdrop
+    if (sidebarBackdrop) {
+      sidebarBackdrop.addEventListener('click', () => closeMobileMenu());
+    }
+
+    function toggleMobileMenu() {
+      sidebar.classList.toggle('open');
+      sidebarBackdrop.classList.toggle('active');
+    }
+
+    function closeMobileMenu() {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('active');
+    }
+
+    function switchPage(pageName) {
+      pages.forEach(page => page.classList.remove('active'));
+      if (pageName === 'budget') document.getElementById('budgetPage').classList.add('active');
+      if (pageName === 'tasks') document.getElementById('tasksPage').classList.add('active');
+      if (pageName === 'today') {
+        document.getElementById('todayPage').classList.add('active');
+        renderTodayTasks();
+      }
+    }
+
+    // Make the manual toggle label clickable even though the toggle is a div
+    const manualLabel = document.querySelector('label[for="manualToggle"]');
+    if (manualLabel) manualLabel.addEventListener('click', () => manualToggle.click());
+
+    function getCurrentDay() {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const today = new Date();
+      return days[today.getDay()];
+    }
+
+    function getFormattedDate() {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date().toLocaleDateString('en-US', options);
+    }
+
+    function renderTodayTasks() {
+      const currentDay = getCurrentDay();
+      todayDayName.textContent = currentDay;
+      todayDate.textContent = getFormattedDate();
+
+      const todaysTasks = state.tasks.filter(task =>
+        task.selectedDays && task.selectedDays.includes(currentDay)
+      );
+
+      if (todaysTasks.length === 0) {
+        todayTaskList.innerHTML = '';
+        todayEmptyState.style.display = 'block';
+        return;
+      }
+
+      todayEmptyState.style.display = 'none';
+      todayTaskList.innerHTML = todaysTasks.map(task => {
+        const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium';
+        const isCompleted = task.completedDays && task.completedDays.includes(currentDay);
+
+        return `
+          <li class="task-item ${isCompleted ? 'completed' : ''}" data-id="${task.id}">
+            <div class="task-item-header">
+              <div class="checkbox-container">
+                <input type="checkbox"
+                  ${isCompleted ? 'checked' : ''}
+                  onchange="toggleDayCompletion(${task.id}, '${currentDay}')">
+              </div>
+              <span class="priority-badge priority-${task.priority || 'medium'}">${priorityLabel}</span>
+              <span class="task-text">${task.text}</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    // Everyday toggle functionality
+    everydayToggle.addEventListener('change', () => {
+      const isChecked = everydayToggle.checked;
+      dayChecks.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        checkbox.parentElement.classList.toggle('selected', isChecked);
+      });
+    });
+
+    // Update everyday toggle when individual days change
+    dayChecks.forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        checkbox.parentElement.classList.toggle('selected', checkbox.checked);
+        const allChecked = Array.from(dayChecks).every(cb => cb.checked);
+        everydayToggle.checked = allChecked;
+      });
+    });
+
+    function loadState() {
+      const saved = localStorage.getItem('taskCoinState');
+      if (saved) {
+        state = JSON.parse(saved);
+        updateUI();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('taskCoinState', JSON.stringify(state));
+    }
+
+    function updateUI() {
+      balanceInput.value = state.budget.balance || '';
+      inflowInput.value = state.budget.inflow || '';
+      outflowInput.value = state.budget.outflow || '';
+      savingsInput.value = state.budget.savings || '';
+      manualAllowanceInput.value = state.budget.manualAllowance || '';
+
+      if (state.budget.manualMode) {
+        manualToggle.classList.add('active');
+        manualAllowanceGroup.style.display = 'block';
+      } else {
+        manualToggle.classList.remove('active');
+        manualAllowanceGroup.style.display = 'none';
+      }
+
+      renderTasks();
+      updateUnlockDisplay();
+    }
+
+    // Toggle manual mode
+    manualToggle.addEventListener('click', () => {
+      state.budget.manualMode = !state.budget.manualMode;
+      manualToggle.classList.toggle('active', state.budget.manualMode);
+      manualAllowanceGroup.style.display = state.budget.manualMode ? 'block' : 'none';
+      saveState();
+      calculateAllowance();
+    });
+
+    // Calculate allowance
+    function calculateAllowance() {
+      const balance = parseFloat(balanceInput.value) || 0;
+      const inflow = parseFloat(inflowInput.value) || 0;
+      const outflow = parseFloat(outflowInput.value) || 0;
+      const savings = parseFloat(savingsInput.value) || 0;
+
+      state.budget.balance = balance;
+      state.budget.inflow = inflow;
+      state.budget.outflow = outflow;
+      state.budget.savings = savings;
+
+      if (state.budget.manualMode) {
+        const manual = parseFloat(manualAllowanceInput.value) || 0;
+        state.budget.manualAllowance = manual;
+        state.budget.potentialAllowance = manual;
+      } else {
+        const calculated = (balance + inflow) - (outflow + savings);
+        state.budget.potentialAllowance = Math.max(0, calculated);
+      }
+
+      saveState();
+      updateUnlockDisplay();
+
+      // Animate the potential amount (sidebar)
+      sidebarPotential.classList.add('highlight');
+      setTimeout(() => sidebarPotential.classList.remove('highlight'), 600);
+    }
+
+    calculateBtn.addEventListener('click', calculateAllowance);
+
+    // Update manual allowance
+    manualAllowanceInput.addEventListener('input', () => {
+      if (state.budget.manualMode) calculateAllowance();
+    });
+
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (!taskText) return;
+
+      const selectedDays = Array.from(dayChecks)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+      if (selectedDays.length === 0) {
+        alert('Please select at least one day for this task.');
+        return;
+      }
+
+      const priority = taskPriority.value;
+      const task = {
+        id: Date.now(),
+        text: taskText,
+        priority,
+        selectedDays,
+        completedDays: []
+      };
+
+      state.tasks.push(task);
+      taskInput.value = '';
+
+      dayChecks.forEach(cb => {
+        cb.checked = false;
+        cb.parentElement.classList.remove('selected');
+      });
+      everydayToggle.checked = false;
+
+      saveState();
+      renderTasks();
+      updateUnlockDisplay();
+    }
+
+    addTaskBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+
+    function renderTasks() {
+      if (state.tasks.length === 0) {
+        taskList.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      taskList.innerHTML = state.tasks.map(task => {
+        const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Medium';
+
+        if (!task.selectedDays || task.selectedDays.length === 0) {
+          task.selectedDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        }
+        if (!task.completedDays) {
+          task.completedDays = task.completed ? task.selectedDays.slice() : [];
+        }
+
+        const dayCheckboxes = task.selectedDays.map(day => {
+          const isCompleted = task.completedDays.includes(day);
+          return `
+            <div class="day-completion ${isCompleted ? 'completed' : ''}" title="${day}">
+              <input type="checkbox"
+                ${isCompleted ? 'checked' : ''}
+                onchange="toggleDayCompletion(${task.id}, '${day}')"
+                onclick="event.stopPropagation()">
+              <span>${day}</span>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <li class="task-item" data-id="${task.id}">
+            <div class="task-item-header">
+              <span class="priority-badge priority-${task.priority || 'medium'}">${priorityLabel}</span>
+              <span class="task-text">${task.text}</span>
+              <button class="delete-btn" onclick="deleteTask(${task.id})">×</button>
+            </div>
+            <div class="task-item-body">
+              <div class="task-days">
+                ${dayCheckboxes}
+              </div>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    // Toggle day completion
+    window.toggleDayCompletion = function(taskId, day) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      if (!task.completedDays) task.completedDays = [];
+
+      const idx = task.completedDays.indexOf(day);
+      if (idx > -1) task.completedDays.splice(idx, 1);
+      else task.completedDays.push(day);
+
+      saveState();
+      renderTasks();
+      renderTodayTasks();
+      updateUnlockDisplay();
+    };
+
+    // Delete task
+    window.deleteTask = function(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      saveState();
+      renderTasks();
+      updateUnlockDisplay();
+    };
+
+    function getPriorityWeight(priority) {
+      const weights = { easy: 1, medium: 2, hard: 3 };
+      return weights[priority] || 2;
+    }
+
+    function celebrateCompletion() {
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return clearInterval(interval);
+
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+    }
+
+    function updateUnlockDisplay() {
+      const totalTasks = state.tasks.length;
+
+      if (totalTasks === 0) {
+        sidebarUnlocked.textContent = '$0.00';
+        sidebarPotential.textContent = `$${state.budget.potentialAllowance.toFixed(2)}`;
+
+        progressBar.style.width = '0%';
+        progressText.textContent = '0 of 0 days completed (0%)';
+        totalTasksEl.textContent = '0';
+        completedTasksEl.textContent = '0';
+        completionRateEl.textContent = '0%';
+        return;
+      }
+
+      let totalWeight = 0;
+      let completedWeight = 0;
+      let totalDaysCompleted = 0;
+      let totalDaysScheduled = 0;
+
+      state.tasks.forEach(task => {
+        const priorityWeight = getPriorityWeight(task.priority);
+
+        if (!task.selectedDays || task.selectedDays.length === 0) {
+          task.selectedDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        }
+        if (!task.completedDays) {
+          task.completedDays = task.completed ? task.selectedDays.slice() : [];
+        }
+
+        const daysScheduled = task.selectedDays.length;
+        const daysCompleted = task.completedDays.length;
+
+        totalWeight += priorityWeight * daysScheduled;
+        completedWeight += priorityWeight * daysCompleted;
+
+        totalDaysScheduled += daysScheduled;
+        totalDaysCompleted += daysCompleted;
+      });
+
+      const percentage = totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+      const unlocked = (state.budget.potentialAllowance * (percentage / 100)).toFixed(2);
+
+      sidebarUnlocked.textContent = `$${unlocked}`;
+      sidebarPotential.textContent = `$${state.budget.potentialAllowance.toFixed(2)}`;
+
+      progressBar.style.width = `${percentage}%`;
+      progressText.textContent = `${totalDaysCompleted} of ${totalDaysScheduled} days completed (${Math.round(percentage)}% weighted)`;
+
+      totalTasksEl.textContent = totalTasks;
+      completedTasksEl.textContent = totalDaysCompleted;
+      completionRateEl.textContent = `${Math.round(percentage)}%`;
+
+      sidebarUnlocked.classList.add('highlight');
+      setTimeout(() => sidebarUnlocked.classList.remove('highlight'), 600);
+
+      if (percentage === 100 && state.lastCompletionPercentage < 100) celebrateCompletion();
+      state.lastCompletionPercentage = percentage;
+    }
+
+    resetWeekBtn.addEventListener('click', () => {
+      if (confirm('Reset for new week? This will clear all tasks and reset your allowance, but keep your base balance.')) {
+        state.tasks = [];
+        state.lastCompletionPercentage = 0;
+        state.budget.potentialAllowance = 0;
+        saveState();
+        renderTasks();
+        updateUnlockDisplay();
+        alert('Week reset! Ready for new tasks. Don\\'t forget to recalculate your allowance.');
+      }
+    });
+
+    // Initialize
+    loadState();
+    renderTodayTasks();
+    updateUnlockDisplay();
+  </script>
+</body>
+</html>
