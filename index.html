@@ -686,6 +686,30 @@
             margin-left: 8px;
         }
 
+        .timer-challenge-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+        }
+
+        .timer-challenge-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .timer-challenge-btn:active {
+            transform: translateY(0);
+        }
+
         .day-progress {
             margin-top: 16px;
             padding: 12px;
@@ -718,6 +742,170 @@
             color: var(--text-primary);
             margin-top: 6px;
             text-align: center;
+        }
+
+        /* Timer Modal */
+        .timer-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .timer-modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        .timer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .timer-header h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .timer-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .timer-close-btn:hover {
+            color: var(--text-primary);
+            transform: none;
+        }
+
+        .timer-display {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .timer-circle {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .timer-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .timer-bg {
+            fill: none;
+            stroke: var(--secondary-bg);
+            stroke-width: 8;
+        }
+
+        .timer-progress {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+
+        .timer-progress.warning {
+            stroke: var(--warning);
+        }
+
+        .timer-progress.danger {
+            stroke: #ef4444;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .timer-time {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .timer-complete-btn {
+            width: 100%;
+            background: var(--success);
+            padding: 16px;
+            font-size: 1.1rem;
+        }
+
+        .timer-complete-btn:hover {
+            background: #059669;
+        }
+
+        .timer-challenge-btn {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            margin-left: auto;
+            box-shadow: none;
+        }
+
+        .timer-challenge-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent-hover);
+            transform: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         select {
@@ -977,6 +1165,26 @@
             .retroactive-badge {
                 font-size: 0.65rem;
                 padding: 3px 6px;
+            }
+
+            .timer-modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .timer-circle {
+                width: 180px;
+                height: 180px;
+            }
+
+            .timer-time {
+                font-size: 2rem;
+            }
+
+            .timer-challenge-btn {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+                margin-left: 8px;
             }
         }
 
@@ -1592,18 +1800,6 @@
                 <button id="addTaskBtn">Add Task</button>
             </div>
 
-            <div class="timed-challenge-section" id="timedChallengeSection">
-                <label class="timed-challenge-toggle">
-                    <input type="checkbox" id="timedChallengeToggle">
-                    <span>⏱️ Timed Challenge? (+0.5x bonus if completed on time)</span>
-                </label>
-                <div class="timer-input-group" id="timerInputGroup" style="display: none;">
-                    <label>Time Limit:</label>
-                    <input type="number" id="timerMinutes" min="1" placeholder="30" value="30">
-                    <span>minutes</span>
-                </div>
-            </div>
-
             <ul class="task-list" id="taskList">
                 <!-- Tasks will be added here dynamically -->
             </ul>
@@ -1671,6 +1867,29 @@
         </div>
     </div>
 </main>
+</div>
+
+<!-- Timer Modal -->
+<div class="timer-modal" id="timerModal" style="display: none;">
+    <div class="timer-modal-content">
+        <div class="timer-header">
+            <h3 id="timerTaskName">Task Name</h3>
+            <button class="timer-close-btn" id="timerCloseBtn">×</button>
+        </div>
+        <div class="timer-display">
+            <div class="timer-circle">
+                <svg class="timer-svg" viewBox="0 0 100 100">
+                    <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                    <circle class="timer-progress" id="timerProgressCircle" cx="50" cy="50" r="45"></circle>
+                </svg>
+                <div class="timer-text">
+                    <div class="timer-time" id="timerTime">00:00</div>
+                    <div class="timer-label">remaining</div>
+                </div>
+            </div>
+        </div>
+        <button class="timer-complete-btn" id="timerCompleteBtn">✓ Mark Complete</button>
+    </div>
 </div>
 
     <script>
@@ -1744,18 +1963,14 @@
         const goalPreviewImage = document.getElementById('goalPreviewImage');
         const goalPreviewName = document.getElementById('goalPreviewName');
         const saveGoalBtn = document.getElementById('saveGoalBtn');
-        const timedChallengeToggle = document.getElementById('timedChallengeToggle');
-        const timerInputGroup = document.getElementById('timerInputGroup');
-        const timerMinutes = document.getElementById('timerMinutes');
+        const timerModal = document.getElementById('timerModal');
+        const timerTaskName = document.getElementById('timerTaskName');
+        const timerTime = document.getElementById('timerTime');
+        const timerProgressCircle = document.getElementById('timerProgressCircle');
+        const timerCompleteBtn = document.getElementById('timerCompleteBtn');
+        const timerCloseBtn = document.getElementById('timerCloseBtn');
 
-        // Timed challenge toggle
-        timedChallengeToggle.addEventListener('change', () => {
-            if (timedChallengeToggle.checked) {
-                timerInputGroup.style.display = 'flex';
-            } else {
-                timerInputGroup.style.display = 'none';
-            }
-        });
+        let activeTimer = null;
 
         // Goal preview update
         goalImageInput.addEventListener('input', updateGoalPreview);
@@ -1939,7 +2154,10 @@
             todaysTasks.forEach(task => {
                 const baseWeight = getPriorityWeight(task.priority);
                 const isCompleted = task.completedDays && task.completedDays.includes(currentDay);
-                const hasBonus = task.timedChallenge && task.completionTimes && task.completionTimes[currentDay] && task.completionTimes[currentDay].onTime;
+                
+                // Check if timer bonus was earned for this day
+                const hasBonus = task.timerData && task.timerData[currentDay] && 
+                               task.timerData[currentDay].completed && task.timerData[currentDay].onTime;
                 const weight = hasBonus ? baseWeight * 1.5 : baseWeight;
                 
                 dayTotalWeight += baseWeight * 1.5; // Max possible (with bonus)
@@ -1972,21 +2190,35 @@
                 // Check if this day is completed
                 const isCompleted = task.completedDays && task.completedDays.includes(currentDay);
                 
-                // Check if timed challenge was completed on time
-                let timerBadge = '';
-                let bonusBadge = '';
-                if (task.timedChallenge && task.timerMinutes) {
-                    if (isCompleted && task.completionTimes && task.completionTimes[currentDay]) {
-                        const onTime = task.completionTimes[currentDay].onTime;
-                        if (onTime) {
-                            timerBadge = `<span class="timer-badge completed">⏱️ ${task.timerMinutes}min</span>`;
-                            bonusBadge = `<span class="bonus-badge">+0.5x BONUS</span>`;
-                        } else {
-                            timerBadge = `<span class="timer-badge">⏱️ Overtime</span>`;
-                        }
-                    } else if (!isCompleted) {
-                        timerBadge = `<span class="timer-badge">⏱️ ${task.timerMinutes}min</span>`;
+                // Initialize timerData if it doesn't exist
+                if (!task.timerData) {
+                    task.timerData = {};
+                }
+
+                // Check timer status for this day
+                const dayTimerData = task.timerData[currentDay];
+                const hasActiveTimer = dayTimerData && dayTimerData.startTime && !dayTimerData.completed;
+                const hasCompletedTimer = dayTimerData && dayTimerData.completed;
+
+                // Timer button or badge
+                let timerElement = '';
+                if (isCompleted && hasCompletedTimer) {
+                    // Show if bonus was earned
+                    if (dayTimerData.onTime) {
+                        timerElement = `
+                            <span class="timer-badge completed">⏱️ ${Math.round(dayTimerData.duration / 60)}min</span>
+                            <span class="bonus-badge">+0.5x BONUS</span>
+                        `;
+                    } else {
+                        timerElement = `<span class="timer-badge">⏱️ Overtime</span>`;
                     }
+                } else if (!isCompleted) {
+                    // Show timer challenge button
+                    timerElement = `
+                        <button class="timer-challenge-btn" onclick="startTimerChallenge(${task.id}, '${currentDay}', event)">
+                            ⏱️ Timed Challenge
+                        </button>
+                    `;
                 }
                 
                 // Check completion metadata for retroactive indicator
@@ -2013,13 +2245,12 @@
                             <div class="checkbox-container">
                                 <input type="checkbox" 
                                        ${isCompleted ? 'checked' : ''} 
-                                       onchange="toggleDayCompletionWithTimer(${task.id}, '${currentDay}', '${viewDateString}', ${task.timedChallenge}, ${task.timerMinutes})">
+                                       onchange="toggleDayCompletionSimple(${task.id}, '${currentDay}', '${viewDateString}')">
                             </div>
                             <span class="priority-badge priority-${task.priority || 'medium'}">${priorityLabel}</span>
                             <span class="task-text">${task.text}</span>
-                            ${timerBadge}
-                            ${bonusBadge}
                             ${retroactiveBadge}
+                            ${timerElement}
                         </div>
                     </li>
                 `;
@@ -2048,8 +2279,8 @@
                     totalWeight += maxWeight;
                     
                     if (task.completedDays.includes(day)) {
-                        const hasBonus = task.timedChallenge && task.completionTimes && 
-                                       task.completionTimes[day] && task.completionTimes[day].onTime;
+                        const hasBonus = task.timerData && task.timerData[day] && 
+                                       task.timerData[day].completed && task.timerData[day].onTime;
                         const actualWeight = hasBonus ? priorityWeight * 1.5 : priorityWeight;
                         completedWeight += actualWeight;
                     }
@@ -2255,8 +2486,6 @@
             }
 
             const priority = taskPriority.value;
-            const hasTimedChallenge = timedChallengeToggle.checked;
-            const timerLimit = hasTimedChallenge ? parseInt(timerMinutes.value) || 30 : null;
 
             const task = {
                 id: Date.now(),
@@ -2264,9 +2493,7 @@
                 priority: priority,
                 selectedDays: selectedDays,
                 completedDays: [],
-                timedChallenge: hasTimedChallenge,
-                timerMinutes: timerLimit,
-                completionTimes: {} // Stores {day: {completedAt: timestamp, startedAt: timestamp}}
+                timerData: {} // Stores timer data per day: {day: {startTime, duration, completed, onTime}}
             };
 
             state.tasks.push(task);
@@ -2278,10 +2505,6 @@
                 cb.parentElement.classList.remove('selected');
             });
             everydayToggle.checked = false;
-
-            // Reset timed challenge
-            timedChallengeToggle.checked = false;
-            timerInputGroup.style.display = 'none';
             
             saveState();
             renderTasks();
@@ -2358,8 +2581,411 @@
             }).join('');
         }
 
-        // Toggle day completion with timer tracking
-        window.toggleDayCompletionWithTimer = function(taskId, day, completionDate, hasTimer, timerMinutes) {
+        // Start timed challenge
+        window.startTimerChallenge = function(taskId, day, event) {
+            event.stopPropagation();
+            console.log('startTimerChallenge called', { taskId, day });
+            
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) {
+                console.error('Task not found:', taskId);
+                return;
+            }
+
+            // Create custom duration input modal
+            const durationModal = document.createElement('div');
+            durationModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10001;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: var(--card-bg);
+                padding: 30px;
+                border-radius: 12px;
+                max-width: 400px;
+                width: 90%;
+            `;
+            
+            modalContent.innerHTML = `
+                <h3 style="margin: 0 0 20px 0; color: var(--text-primary);">Set Timer Duration</h3>
+                <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 0.9rem;">Hours</label>
+                        <select id="hoursInput" style="width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid var(--border); 
+                                   background: var(--secondary-bg); color: var(--text-primary); border-radius: 8px; cursor: pointer;">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 0.9rem;">Minutes</label>
+                        <select id="minutesInput" style="width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid var(--border); 
+                                   background: var(--secondary-bg); color: var(--text-primary); border-radius: 8px; cursor: pointer;">
+                            <option value="0">0</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="25">25</option>
+                            <option value="30" selected>30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="cancelDuration" style="flex: 1; padding: 12px; background: var(--border); color: var(--text-primary); border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Cancel</button>
+                    <button id="confirmDuration" style="flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Start Challenge</button>
+                </div>
+            `;
+            
+            durationModal.appendChild(modalContent);
+            document.body.appendChild(durationModal);
+            
+            const hoursInput = document.getElementById('hoursInput');
+            const minutesInput = document.getElementById('minutesInput');
+            const cancelBtn = document.getElementById('cancelDuration');
+            const confirmBtn = document.getElementById('confirmDuration');
+            
+            // Focus the minutes input
+            setTimeout(() => minutesInput.focus(), 100);
+            
+            // Handle cancel
+            cancelBtn.onclick = () => {
+                document.body.removeChild(durationModal);
+                console.log('Challenge cancelled by user');
+            };
+            
+            // Handle confirm
+            const startChallenge = () => {
+                const hours = parseInt(hoursInput.value);
+                const minutes = parseInt(minutesInput.value);
+                const totalMinutes = (hours * 60) + minutes;
+                
+                console.log('Duration entered:', { hours, minutes, totalMinutes }, 'Type: number');
+                
+                if (totalMinutes <= 0) {
+                    alert('Please select at least 5 minutes for the challenge');
+                    return;
+                }
+                
+                console.log('Total minutes:', totalMinutes);
+                
+                // Remove the duration modal
+                document.body.removeChild(durationModal);
+                
+                // Format display text
+                let durationText = '';
+                if (hours > 0 && minutes > 0) {
+                    durationText = `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes > 1 ? 's' : ''}`;
+                } else if (hours > 0) {
+                    durationText = `${hours} hour${hours > 1 ? 's' : ''}`;
+                } else {
+                    durationText = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                }
+                
+                // Show custom confirmation modal
+                const confirmModal = document.createElement('div');
+                confirmModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10001;
+                `;
+                
+                const confirmContent = document.createElement('div');
+                confirmContent.style.cssText = `
+                    background: var(--card-bg);
+                    padding: 30px;
+                    border-radius: 12px;
+                    max-width: 400px;
+                    width: 90%;
+                `;
+                
+                confirmContent.innerHTML = `
+                    <h3 style="margin: 0 0 20px 0; color: var(--text-primary);">Ready to Start?</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem;">
+                        Start ${durationText} timed challenge for "${task.text}"?
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="cancelReady" style="flex: 1; padding: 12px; background: var(--border); color: var(--text-primary); border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Not Yet</button>
+                        <button id="confirmReady" style="flex: 1; padding: 12px; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Start Now!</button>
+                    </div>
+                `;
+                
+                confirmModal.appendChild(confirmContent);
+                document.body.appendChild(confirmModal);
+                
+                const cancelReadyBtn = document.getElementById('cancelReady');
+                const confirmReadyBtn = document.getElementById('confirmReady');
+                
+                cancelReadyBtn.onclick = () => {
+                    document.body.removeChild(confirmModal);
+                    console.log('Challenge cancelled at ready confirmation');
+                };
+                
+                confirmReadyBtn.onclick = () => {
+                    document.body.removeChild(confirmModal);
+                    console.log('Challenge confirmed, starting timer');
+                    
+                    // Initialize timer data
+                    if (!task.timerData) {
+                        task.timerData = {};
+                    }
+                    
+                    const startTime = Date.now();
+                    task.timerData[day] = {
+                        startTime: startTime,
+                        duration: totalMinutes * 60, // in seconds
+                        completed: false,
+                        onTime: false
+                    };
+                    
+                    saveState();
+                    console.log('Timer data saved, showing modal');
+                    
+                    // Show timer modal
+                    showTimerModal(task, day, totalMinutes * 60);
+                };
+            };
+            
+            confirmBtn.onclick = startChallenge;
+        };
+
+        // Show timer modal
+        function showTimerModal(task, day, durationInSeconds) {
+            console.log('showTimerModal called', { task, day, durationInSeconds });
+            
+            // Set active timer FIRST before showing modal
+            activeTimer = {
+                taskId: task.id,
+                day: day,
+                totalDuration: durationInSeconds,
+                startTime: Date.now()
+            };
+            
+            console.log('activeTimer set:', activeTimer);
+            
+            // Update modal content
+            timerTaskName.textContent = task.text;
+            const minutes = Math.floor(durationInSeconds / 60);
+            const seconds = Math.floor(durationInSeconds % 60);
+            timerTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            // Show modal
+            timerModal.style.display = 'flex';
+            console.log('Modal display set to flex');
+            
+            // Start the timer interval
+            updateTimerDisplay();
+            activeTimer.interval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        // Update timer display
+        function updateTimerDisplay() {
+            if (!activeTimer) return;
+
+            const elapsed = (Date.now() - activeTimer.startTime) / 1000; // seconds
+            const remaining = Math.max(0, activeTimer.totalDuration - elapsed);
+            
+            // Update time text
+            const minutes = Math.floor(remaining / 60);
+            const seconds = Math.floor(remaining % 60);
+            timerTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            // Update progress circle
+            const progress = (elapsed / activeTimer.totalDuration);
+            const circumference = 283; // 2 * PI * 45
+            const offset = circumference * progress;
+            timerProgressCircle.style.strokeDashoffset = offset;
+
+            // Change color based on time remaining
+            const percentRemaining = (remaining / activeTimer.totalDuration) * 100;
+            timerProgressCircle.classList.remove('warning', 'danger');
+            if (percentRemaining <= 25) {
+                timerProgressCircle.classList.add('danger');
+            } else if (percentRemaining <= 50) {
+                timerProgressCircle.classList.add('warning');
+            }
+
+            // If time's up
+            if (remaining <= 0) {
+                clearInterval(activeTimer.interval);
+                timerTime.textContent = "00:00";
+                alert("Time's up! Complete the task to see if you earned the bonus.");
+            }
+        }
+
+        // Complete timer challenge
+        timerCompleteBtn.addEventListener('click', (e) => {
+            console.log('Timer complete button clicked', activeTimer);
+            if (!activeTimer) {
+                console.error('No active timer found');
+                alert('Error: No active timer. Please try again.');
+                return;
+            }
+
+            const task = state.tasks.find(t => t.id === activeTimer.taskId);
+            if (!task) {
+                console.error('Task not found:', activeTimer.taskId);
+                alert('Error: Task not found. Please try again.');
+                return;
+            }
+
+            const elapsed = (Date.now() - activeTimer.startTime) / 1000; // seconds
+            const onTime = elapsed <= activeTimer.totalDuration;
+
+            // Capture these values before closing modal (activeTimer becomes null)
+            const taskId = activeTimer.taskId;
+            const day = activeTimer.day;
+
+            // Update timer data
+            task.timerData[day].completed = true;
+            task.timerData[day].onTime = onTime;
+
+            // Mark task as complete
+            const viewDateString = state.viewingDate || getTodayDateString();
+            toggleDayCompletionSimple(taskId, day, viewDateString);
+
+            // Close modal first
+            closeTimerModal();
+
+            // Show result with confetti if on time
+            if (onTime) {
+                // Trigger confetti celebration!
+                celebrateCompletion();
+                setTimeout(() => {
+                    alert(`✨ Completed on time! You earned a +0.5x bonus! (${Math.floor(elapsed / 60)}min ${Math.floor(elapsed % 60)}s)`);
+                }, 300);
+            } else {
+                // Show overtime modal with try again option
+                const overtimeModal = document.createElement('div');
+                overtimeModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10001;
+                `;
+                
+                const overtimeContent = document.createElement('div');
+                overtimeContent.style.cssText = `
+                    background: var(--card-bg);
+                    padding: 30px;
+                    border-radius: 12px;
+                    max-width: 400px;
+                    width: 90%;
+                `;
+                
+                overtimeContent.innerHTML = `
+                    <h3 style="margin: 0 0 20px 0; color: var(--warning);">⏱️ Overtime</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem;">
+                        Task completed, but over time.<br>
+                        <strong style="color: var(--text-primary);">${Math.floor(elapsed / 60)}min ${Math.floor(elapsed % 60)}s</strong>
+                    </p>
+                    <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 0.95rem;">
+                        Want to try again for the bonus?
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="overtimeOk" style="flex: 1; padding: 12px; background: var(--border); color: var(--text-primary); border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Keep It</button>
+                        <button id="overtimeTryAgain" style="flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">Try Again?</button>
+                    </div>
+                `;
+                
+                overtimeModal.appendChild(overtimeContent);
+                document.body.appendChild(overtimeModal);
+                
+                const okBtn = document.getElementById('overtimeOk');
+                const tryAgainBtn = document.getElementById('overtimeTryAgain');
+                
+                okBtn.onclick = () => {
+                    document.body.removeChild(overtimeModal);
+                    console.log('User kept overtime completion');
+                };
+                
+                tryAgainBtn.onclick = () => {
+                    document.body.removeChild(overtimeModal);
+                    console.log('User chose to try again');
+                    
+                    // Unmark the task (using captured day value)
+                    const dayIndex = task.completedDays.indexOf(day);
+                    if (dayIndex > -1) {
+                        task.completedDays.splice(dayIndex, 1);
+                    }
+                    
+                    // Clear completion metadata
+                    if (task.completionMeta && task.completionMeta[day]) {
+                        delete task.completionMeta[day];
+                    }
+                    
+                    // Clear timer data
+                    if (task.timerData && task.timerData[day]) {
+                        delete task.timerData[day];
+                    }
+                    
+                    saveState();
+                    renderTasks();
+                    renderTodayTasks();
+                    updateUnlockDisplay();
+                    
+                    alert('Task unmarked! Ready to try again when you are. 💪');
+                };
+            }
+        });
+
+        // Close timer modal
+        timerCloseBtn.addEventListener('click', (e) => {
+            console.log('Timer close button clicked', activeTimer);
+            if (!activeTimer) {
+                // If no active timer, just close the modal
+                timerModal.style.display = 'none';
+                return;
+            }
+            
+            if (confirm("Are you sure you want to cancel this timed challenge? Your progress will be lost.")) {
+                const task = state.tasks.find(t => t.id === activeTimer.taskId);
+                if (task && task.timerData) {
+                    delete task.timerData[activeTimer.day];
+                    saveState();
+                }
+                closeTimerModal();
+            }
+        });
+
+        function closeTimerModal() {
+            console.log('closeTimerModal called', activeTimer);
+            if (activeTimer && activeTimer.interval) {
+                clearInterval(activeTimer.interval);
+            }
+            activeTimer = null;
+            timerModal.style.display = 'none';
+            renderTodayTasks();
+        }
+
+        // Simple day completion toggle (without old timer logic)
+        window.toggleDayCompletionSimple = function(taskId, day, completionDate) {
             const task = state.tasks.find(t => t.id === taskId);
             if (!task) return;
 
@@ -2369,53 +2995,17 @@
             if (!task.completionMeta) {
                 task.completionMeta = {};
             }
-            if (!task.completionTimes) {
-                task.completionTimes = {};
-            }
 
             const dayIndex = task.completedDays.indexOf(day);
-            const now = Date.now();
 
             if (dayIndex > -1) {
                 // Uncomplete the day
                 task.completedDays.splice(dayIndex, 1);
                 delete task.completionMeta[day];
-                delete task.completionTimes[day];
             } else {
-                // Check if this is the first time checking (starting the timer)
-                if (hasTimer && !task.completionTimes[day]) {
-                    // Start the timer
-                    task.completionTimes[day] = {
-                        startedAt: now,
-                        completedAt: null,
-                        onTime: false
-                    };
-                    saveState();
-                    
-                    // Don't mark as complete yet, just started the timer
-                    alert(`Timer started! Complete this task within ${timerMinutes} minutes for a +0.5x bonus.`);
-                    return;
-                }
-
-                // Complete the task
+                // Complete the day
                 task.completedDays.push(day);
                 task.completionMeta[day] = completionDate;
-
-                if (hasTimer && task.completionTimes[day]) {
-                    // Check if completed within time limit
-                    const startTime = task.completionTimes[day].startedAt;
-                    const elapsed = (now - startTime) / 1000 / 60; // minutes
-                    const onTime = elapsed <= timerMinutes;
-                    
-                    task.completionTimes[day].completedAt = now;
-                    task.completionTimes[day].onTime = onTime;
-
-                    if (onTime) {
-                        alert(`✨ Completed on time! You earned a +0.5x bonus! (${Math.round(elapsed)} minutes)`);
-                    } else {
-                        alert(`Task completed, but over time. (${Math.round(elapsed)} minutes)`);
-                    }
-                }
             }
 
             saveState();
@@ -2424,6 +3014,7 @@
             updateUnlockDisplay();
         };
 
+        // Toggle day completion with timer tracking
         // Toggle day completion with date tracking
         window.toggleDayCompletionWithDate = function(taskId, day, completionDate) {
             const task = state.tasks.find(t => t.id === taskId);
@@ -2542,19 +3133,19 @@
                 if (!task.completedDays) {
                     task.completedDays = task.completed ? task.selectedDays.slice() : [];
                 }
-                if (!task.completionTimes) {
-                    task.completionTimes = {};
+                if (!task.timerData) {
+                    task.timerData = {};
                 }
                 
                 task.selectedDays.forEach(day => {
-                    // Max possible weight (with timer bonus)
-                    const maxDayWeight = task.timedChallenge ? priorityWeight * 1.5 : priorityWeight;
+                    // Max possible weight (with timer bonus - any task can have a timer)
+                    const maxDayWeight = priorityWeight * 1.5;
                     totalWeight += maxDayWeight;
                     
                     if (task.completedDays.includes(day)) {
                         // Check if timer bonus was earned
-                        const hasBonus = task.timedChallenge && task.completionTimes[day] && 
-                                       task.completionTimes[day].onTime;
+                        const hasBonus = task.timerData[day] && task.timerData[day].completed && 
+                                       task.timerData[day].onTime;
                         const actualWeight = hasBonus ? priorityWeight * 1.5 : priorityWeight;
                         completedWeight += actualWeight;
                         totalDaysCompleted++;
